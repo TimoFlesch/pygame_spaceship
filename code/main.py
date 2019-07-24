@@ -1,12 +1,14 @@
-# detects collision of agent with objects
-
+# adds score (number of dodged objects)
+# also increases difficulty by making game faster and obstacles bigger with
+# each dodged obstacle
 import pygame
 import time
 import random
+import numpy as np
 
 pygame.init()
 windowWidth = 800
-windowHeight = 600
+windowHeight = 1000
 gameDisplay = pygame.display.set_mode((windowWidth, windowHeight))
 pygame.display.set_caption('hello world')
 
@@ -23,9 +25,28 @@ def draw_agent(x, y):
     gameDisplay.blit(agentImg, (x, y))
 
 
-def draw_shape(x, y, w, h, col):
+def draw_stars(x, y, w, h):
+    for ii in range(x.shape[0]):
+        draw_obstacle(x[ii], y[ii], w, h, (245, 206, 66))
+
+
+def draw_obstacle(x, y, w, h, col):
     pygame.draw.rect(gameDisplay, col, [x, y, w, h])
 
+
+def draw_dodgecounter(count):
+    font = pygame.font.SysFont(None, 26)
+    text = font.render("Avoided Collisions: " + str(count),
+            True, (255, 255, 255))
+    gameDisplay.blit(text, (0, 0))
+
+
+def update_stars(x, y):
+    for ii in range(len(x)):
+        if y[ii] > windowHeight:
+            y[ii] = 0
+            x[ii] = np.random.randint(0,windowWidth,1)
+    return x, y
 
 def print_message(messageText):
     textFont = pygame.font.Font('freesansbold.ttf', 28)
@@ -44,10 +65,12 @@ def agent_left_screen(waitSecs=2):
     time.sleep(waitSecs)
     main_loop()
 
+
 def agent_crashed(waitSecs=2):
     print_message('your ship got destroyed!')
     time.sleep(waitSecs)
     main_loop()
+
 
 
 def main_loop():
@@ -56,17 +79,26 @@ def main_loop():
     agentYPos = windowHeight * .75
 
     spaceshipSpeed = 5
+    dodgedItems = 0
 
     # define change of x and y (init to 0)
     delta_x = 0
     delta_y = 0
 
-    # init shape
-    shapeXPos = random.randrange(0, agentXPos)
-    shapeYPos = -agentYPos
-    shapeSpeed = 7
-    shapeWidth = 50
-    shapeHeight = 50
+    # init obstacle
+    obstacleXPos = random.randrange(0, agentXPos)
+    obstacleYPos = -agentYPos
+    obstacleSpeed = 7
+    obstacleWidth = 50
+    obstacleHeight = 50
+
+    # init stars
+    numStars = 100
+    starsXPos = np.random.randint(0,windowWidth,numStars)
+    starsYPos = np.random.randint(0,windowHeight,numStars)
+    starsWidth = 2
+    starsHeight = 2
+    starsSpeed = 2
 
     while not quitGame:
         for event in pygame.event.get():
@@ -98,27 +130,40 @@ def main_loop():
             print(event)
         gameDisplay.fill((0, 0, 0))
 
+        # draw stars
+        draw_stars(starsXPos, starsYPos, starsWidth, starsHeight)
+        starsYPos+= starsSpeed
+        starsXPos, starsYPos = update_stars(starsXPos, starsYPos)
+        # draw dodge counter
+        draw_dodgecounter(dodgedItems)
+
         # update location of agent
         agentXPos += delta_x
         agentYPos += delta_y
         draw_agent(agentXPos, agentYPos)
 
-        # update location of shapes
-        draw_shape(shapeXPos, shapeYPos,
-            shapeWidth, shapeHeight, (255, 255, 255))
-        shapeYPos += shapeSpeed
+        # update location of obstacles
+        draw_obstacle(obstacleXPos, obstacleYPos,
+            obstacleWidth, obstacleHeight, (255, 255, 255))
+        obstacleYPos += obstacleSpeed
 
-        # if shape has left screen, put it back on top, but with new random x location
-        if shapeYPos > windowHeight:
-            shapeYPos = 0-shapeHeight
-            shapeXPos = random.randrange(0, windowWidth)
+        # if obstacle has left screen, put it back on top, but with new random x location
+        if obstacleYPos > windowHeight:
+            obstacleYPos = 0-obstacleHeight
+            obstacleXPos = random.randrange(0, windowWidth)
+            # count up score and increase difficulty of game
+            dodgedItems += 1
+            obstacleSpeed +=1
+            starsSpeed += 1
+            # obstacleWidth += (dodgedItems * 1.2)
 
-        # if shape has touched agent, restart
-        if agentYPos < shapeYPos+shapeHeight:
+        # if obstacle has touched agent, restart
+        if agentYPos < obstacleYPos+obstacleHeight:
             print('y crossover')
-            if (shapeXPos + shapeWidth > agentXPos and agentXPos > shapeXPos
-                    or agentXPos+agentWidth > shapeXPos and agentXPos+agentWidth < shapeXPos+shapeWidth):
-                agent_crashed()
+            if not(agentYPos < obstacleYPos):
+                if (obstacleXPos + obstacleWidth > agentXPos and agentXPos > obstacleXPos
+                        or agentXPos+agentWidth > obstacleXPos and agentXPos+agentWidth < obstacleXPos+obstacleWidth):
+                        agent_crashed()
         # if agent has left screen, restart
         if (agentXPos < 0 or agentYPos < 0 or agentXPos
                 > windowWidth - agentWidth
@@ -126,7 +171,7 @@ def main_loop():
             agent_left_screen()
         pygame.display.update()
 
-        clock.tick(30)
+        clock.tick(60)
 
 
 main_loop()
