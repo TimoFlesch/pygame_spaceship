@@ -20,6 +20,7 @@ agentWidth = 60
 agentHeight = 100
 agentImg = pygame.transform.scale(agentImg, (agentWidth, agentHeight))
 
+asteroidImg = pygame.image.load('../assets/asteroid.png')
 
 def draw_agent(x, y):
     gameDisplay.blit(agentImg, (x, y))
@@ -27,12 +28,12 @@ def draw_agent(x, y):
 
 def draw_stars(x, y, w, h):
     for ii in range(x.shape[0]):
-        draw_obstacle(x[ii], y[ii], w, h, (245, 206, 66))
+        pygame.draw.rect(gameDisplay, (245, 206, 66), [x[ii], y[ii], w, h])
 
 
 def draw_obstacle(x, y, w, h, col):
-    pygame.draw.rect(gameDisplay, col, [x, y, w, h])
-
+    # pygame.draw.rect(gameDisplay, col, [x, y, w, h])
+    gameDisplay.blit(asteroidImg, (x, y))
 
 def draw_dodgecounter(count):
     font = pygame.font.SysFont(None, 26)
