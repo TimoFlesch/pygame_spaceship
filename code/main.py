@@ -1,27 +1,29 @@
-# adds score (number of dodged objects)
-# also increases difficulty by making game faster and obstacles bigger with
-# each dodged obstacle
+# http://programarcadegames.com/python_examples/show_file.php?file=game_class_example.py
+# https://realpython.com/pygame-a-primer/#images
+
+# playground
 import pygame
-import time
+from pygame.locals import *
 import random
 import numpy as np
+import time
 
 # window constants
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 1000
+WINDOW_WIDTH = 600
+WINDOW_HEIGHT = 800
 
 # agent constants
-AGENT_WIDTH = 60
-AGENT_HEIGHT = 100
+AGENT_WIDTH = 40
+AGENT_HEIGHT = 60
 
 AGENT_STARTX = WINDOW_WIDTH * .45
 AGENT_STARTY = WINDOW_HEIGHT * .75
 
-AGENT_SPEED = 5
+AGENT_SPEED = 7
 
 # image paths
-PATH_AGENTIMG = '../assets/spaceship.png'
-PATH_ASTEROIDIMG = '../assets/asteroid.png'
+IMG_AGENT = '../assets/spaceship.png'
+IMG_OBSTACLE = '../assets/asteroid.png'
 
 # colors
 COL_WHITE = (255, 255, 255)
@@ -35,177 +37,191 @@ OBSTACLE_SPEED = 7
 
 # stars (background)
 N_STARS = 100
-STARS_STARTX = np.random.randint(0, WINDOW_WIDTH, N_STARS)
-STARS_STARTY = np.random.randint(0, WINDOW_HEIGHT, N_STARS)
 STARS_WIDTH = 2
 STARS_HEIGHT = 2
 STARS_SPEED = 2
 
 
-pygame.init()
-game_display = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption('asteriods 1.0')
+class Agent(pygame.sprite.Sprite):
+    """docstring for Agent."""
 
-clock = pygame.time.Clock()
+    def __init__(self, w=AGENT_WIDTH, h=AGENT_HEIGHT, col=(255, 255, 255)):
+        super(Agent, self).__init__()
+        self.image = pygame.image.load(IMG_AGENT).convert()
+        self.image = pygame.transform.scale(self.image, (AGENT_WIDTH, AGENT_HEIGHT))
+        self.rect = self.image.get_rect()
+        self.rect.x = AGENT_STARTX
+        self.rect.y = AGENT_STARTY
+        self.speed = AGENT_SPEED
 
-agent_img = pygame.image.load(PATH_AGENTIMG)
-# make image smaller
-agent_img = pygame.transform.scale(agent_img, (AGENT_WIDTH, AGENT_HEIGHT))
+    def update(self, keys):
+        if keys[K_UP]:
+            self.rect.move_ip(0, -self.speed)
+        if keys[K_DOWN]:
+            self.rect.move_ip(0, self.speed)
+        if keys[K_LEFT]:
+            self.rect.move_ip(-self.speed, 0)
+        if keys[K_RIGHT]:
+            self.rect.move_ip(self.speed, 0)
+        # keep agent on screen
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > WINDOW_WIDTH:
+            self.rect.right = WINDOW_WIDTH
+        if self.rect.top <= 0:
+            self.rect.top = 0
+        if self.rect.bottom >= WINDOW_HEIGHT:
+            self.rect.bottom = WINDOW_HEIGHT
 
-asteroid_img = pygame.image.load(PATH_ASTEROIDIMG)
-
-
-def draw_agent(x, y):
-    game_display.blit(agent_img, (x, y))
-
-
-def draw_stars(x, y, w, h):
-    for ii in range(x.shape[0]):
-        pygame.draw.rect(game_display, COL_YELLOW, [x[ii], y[ii], w, h])
-
-
-def draw_obstacle(x, y, w, h, col):
-    # pygame.draw.rect(game_display, col, [x, y, w, h])
-    game_display.blit(asteroid_img, (x, y))
-
-
-def draw_dodgecounter(count):
-    font = pygame.font.SysFont(None, 26)
-    text = font.render("Avoided Collisions: " + str(count),
-                True, COL_WHITE)
-    game_display.blit(text, (0, 0))
-
-
-def update_stars(x, y):
-    for ii in range(len(x)):
-        if y[ii] > WINDOW_HEIGHT:
-            y[ii] = 0
-            x[ii] = np.random.randint(0, WINDOW_WIDTH, 1)
-    return x, y
+    def reset_pos(self):
+        self.rect.x = AGENT_STARTX
+        self.rect.y = AGENT_STARTY
 
 
-def print_message(messageText):
-    textFont = pygame.font.Font('freesansbold.ttf', 28)
-    textSurface = textFont.render(messageText, True, COL_WHITE)
-    textRect = textSurface.get_rect()
-    textRect.center = ((WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
+class Obstacle(pygame.sprite.Sprite):
+    """docstring for Obstacle."""
 
-    game_display.blit(textSurface, textRect)
-    pygame.display.update()
+    def __init__(self):
+        super(Obstacle, self).__init__()
+        self.image = pygame.image.load(IMG_OBSTACLE).convert()
+        self.image = pygame.transform.scale(self.image, (OBSTACLE_WIDTH, OBSTACLE_HEIGHT))
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(0, WINDOW_WIDTH-OBSTACLE_WIDTH)
+        self.rect.y = 0-OBSTACLE_HEIGHT
+        self.speed = OBSTACLE_SPEED
+
+    def update(self):
+        self.rect.y += self.speed
+        if self.rect.top > WINDOW_HEIGHT:
+            self.rect.x = random.randrange(0, WINDOW_WIDTH-OBSTACLE_WIDTH)
+            self.rect.bottom = 0
+
+    def reset_pos(self):
+        self.rect.x = random.randrange(0, WINDOW_WIDTH-OBSTACLE_WIDTH)
+        self.rect.y = 0-OBSTACLE_HEIGHT
 
 
-def agent_left_screen(waitSecs=2):
-    # print message
-    print_message('game over!')
-    # wait for three seconds
-    time.sleep(waitSecs)
-    main_loop()
+class Star(pygame.sprite.Sprite):
+    """docstring for Star."""
+
+    def __init__(self):
+        super(Star, self).__init__()
+        self.surf = pygame.Surface((STARS_WIDTH, STARS_HEIGHT))
+        self.surf.fill((COL_YELLOW))
+        self.rect = self.surf.get_rect(center=(random.randint(0, WINDOW_WIDTH),
+                        random.randint(0, WINDOW_HEIGHT)))
+        self.speed = STARS_SPEED
+
+    def update(self):
+        self.rect.move_ip(0, self.speed)
+        if self.rect.top > WINDOW_HEIGHT:
+            self.rect.top = 0
+            self.rect.x = random.randrange(0, WINDOW_WIDTH)
+
+    def reset_pos(self):
+        self.rect.x = random.randrange(0, WINDOW_WIDTH-OBSTACLE_WIDTH)
+        self.rect.y = 0-OBSTACLE_HEIGHT
 
 
-def agent_crashed(waitSecs=2):
-    print_message('game over!')
-    time.sleep(waitSecs)
-    main_loop()
+class Game(object):
+    """instantiates a new game"""
 
+    def __init__(self, w=WINDOW_WIDTH, h=WINDOW_HEIGHT):
+        self.score = 0
+        self.is_game_over = False
+        self.display = pygame.display.set_mode((w, h))
+        pygame.display.set_caption('asteroids 1.2')
+        self.display.fill(COL_BLACK)
+        self.waitSecs = 2
+        self.agent = Agent()
+        self.obstacle = Obstacle()
+        self.stars = pygame.sprite.Group()
+        [self.stars.add(Star()) for ii in range(N_STARS)]
 
-def main_loop():
-    quitGame = False
-    agentXPos = AGENT_STARTX
-    agentYPos = AGENT_STARTY
-
-    n_dodged = 0
-
-    # define change of x and y (init to 0)
-    delta_x = 0
-    delta_y = 0
-
-    # init obstacle
-    obstacleXPos = random.randrange(0, agentXPos)
-    obstacleYPos = -agentYPos
-    obstacleSpeed = OBSTACLE_SPEED
-
-    # init stars
-    starsXPos = STARS_STARTX
-    starsYPos = STARS_STARTY
-    starsSpeed = STARS_SPEED
-
-    while not quitGame:
+    def process_events(self):
         for event in pygame.event.get():
-
             if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-
-            # check if any key is currently being pressed
+                return True
             if event.type == pygame.KEYDOWN:
-                # if left key, move left
-                if event.key == pygame.K_LEFT:
-                    delta_x = -AGENT_SPEED
-                elif event.key == pygame.K_RIGHT:
-                    delta_x = AGENT_SPEED
-                elif event.key == pygame.K_UP:
-                    delta_y = -AGENT_SPEED
-                elif event.key == pygame.K_DOWN:
-                    delta_y = AGENT_SPEED
-                elif event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    quit()
-            # if key released, stop moving
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    delta_x = 0
-                elif event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    delta_y = 0
-            # print(event)
-        game_display.fill(COL_BLACK)
+                if event.key == pygame.K_ESCAPE:
+                    return True
+        return False
 
-        # draw stars
-        draw_stars(starsXPos, starsYPos, STARS_WIDTH, STARS_HEIGHT)
-        starsYPos += starsSpeed
-        starsXPos, starsYPos = update_stars(starsXPos, starsYPos)
-        # draw dodge counter
-        draw_dodgecounter(n_dodged)
+    def update_state(self):
+        # overwrite prev disp content
+        self.display.fill(COL_BLACK)
+        # move agent
+        keys = pygame.key.get_pressed()
+        self.agent.update(keys)
+        # move stars
+        for star in self.stars:
+            star.update()
+        # move obstacles
+        self.obstacle.update()
 
-        # update location of agent
-        agentXPos += delta_x
-        agentYPos += delta_y
-        draw_agent(agentXPos, agentYPos)
+    def check_state(self):
+        # check for collisions etc (i.e. game over state)
+        return pygame.sprite.collide_rect(self.agent, self.obstacle)
 
-        # update location of obstacles
-        draw_obstacle(obstacleXPos, obstacleYPos,
-                        OBSTACLE_WIDTH, OBSTACLE_HEIGHT, COL_WHITE)
-        obstacleYPos += obstacleSpeed
-
-        # if obstacle has left screen, put it back on top, but
-        # with new random x location
-        if obstacleYPos > WINDOW_HEIGHT:
-            obstacleYPos = 0-OBSTACLE_HEIGHT
-            obstacleXPos = random.randrange(0, WINDOW_WIDTH)
-            # count up score and increase difficulty of game
-            n_dodged += 1
-            obstacleSpeed += 1
-            starsSpeed += 1
-            # OBSTACLE_WIDTH += (n_dodged * 1.2)
-
-        # if obstacle has touched agent, restart
-        if agentYPos < obstacleYPos+OBSTACLE_HEIGHT:            
-            if not(agentYPos < obstacleYPos):
-                if (obstacleXPos + OBSTACLE_WIDTH > agentXPos and
-                        agentXPos > obstacleXPos or
-                        agentXPos+AGENT_WIDTH > obstacleXPos and
-                        agentXPos+AGENT_WIDTH < obstacleXPos +
-                        OBSTACLE_WIDTH):
-                    agent_crashed()
-        # if agent has left screen, restart
-        if (agentXPos < 0 or agentYPos < 0 or agentXPos
-                > WINDOW_WIDTH - AGENT_WIDTH
-                or agentYPos > WINDOW_HEIGHT - AGENT_HEIGHT):
-            agent_left_screen()
+    def disp_frame(self):
+        for entity in self.stars:
+            self.display.blit(entity.surf, entity.rect)
+        self.display.blit(self.agent.image, self.agent.rect)
+        self.display.blit(self.obstacle.image, self.obstacle.rect)
         pygame.display.update()
 
+    def disp_game_over(self):
+        # print message
+        self.render_text('game over :(')
+        # wait for three seconds
+        time.sleep(self.waitSecs)
+
+    def render_text(self,messageText):
+        textFont = pygame.font.Font('freesansbold.ttf', 28)
+        textSurface = textFont.render(messageText, True, COL_WHITE)
+        textRect = textSurface.get_rect()
+        textRect.center = ((WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
+
+        self.display.blit(textSurface, textRect)
+        pygame.display.update()
+
+    def reset_state(self):
+        # resets game state
+        self.agent.reset_pos()
+        self.obstacle.reset_pos()
+
+    def run(self):
+        # process events
+        game_state = self.process_events()
+        # update states
+        self.update_state()
+        # display frame
+        self.disp_frame()
+        # check if game over
+        self.is_game_over = self.check_state()
+        # if game over, reset game
+        if self.is_game_over:
+            self.disp_game_over()
+            self.reset_state()
+        # return game state (True or False)
+        return game_state
+
+
+def main():
+
+    pygame.init()
+    clock = pygame.time.Clock()
+
+    game = Game()
+
+    exit_game = False
+    while not exit_game:
+        # process key strokes collisions etc
+        exit_game = game.run()
+        # run at 60pfs
         clock.tick(60)
+    pygame.quit()
+    quit()
 
-
-main_loop()
-pygame.quit()
-quit()
+if __name__ == "__main__":
+    main()
