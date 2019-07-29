@@ -24,3 +24,9 @@ avoid crashing into asteroids.
 
 ### how to close the game 
 close the window by pressing the small x in the top right corner, or by hitting the *ESC* button whenever think you've had enough.
+
+
+## Resources 
+All externally imported assets are open source.  
+Rocket image by <a href="https://pixabay.com/users/dawnydawny-2157612/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2442125">dawnydawny</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=2442125">Pixabay</a>  
+Asteroid image obtained from <a href="https://opengameart.org/content/asteroid-generator-and-a-set-of-generated-asteroids"> opengameart</a>
