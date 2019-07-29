@@ -1,5 +1,5 @@
 # spaceship game in python
-I tried to familiarise myself with pygame and implemented
+I tried to familiarise myself with the *pygame* library and implemented
 a very rudimental 2D game. 
 The objective is to steer a space ship through a field of asteroids without crashing into the. The score as well as the speed with which asteroids are being approached increase with each successfully avoided asteroid.  
 
