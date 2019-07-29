@@ -10,7 +10,7 @@ pip uninstall pygame
 pip install "pygame>=2.0.0.dev1"
 ```
 ## how to start the game
-from the command line, call 
+from the command line, navigate to the *code* folder and call 
 ```bash
 python spacegame.py
 ```
