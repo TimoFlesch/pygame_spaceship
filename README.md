@@ -3,7 +3,7 @@ I tried to familiarise myself with the *pygame* library and implemented
 a very rudimental 2D game.
 The objective is to steer a space ship through a field of asteroids without crashing into the. The score as well as the speed with which asteroids are being approached increase with each successfully avoided asteroid.  
 
-![example]("./assets/game_screen.png")
+![example](./assets/game_screen.png)
 
 
 note: if you observe high single core usage (perhaps even maxed out), uninstall pygame and install the latest dev version
