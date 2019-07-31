@@ -1,7 +1,3 @@
-# http://programarcadegames.com/python_examples/show_file.php?file=game_class_example.py
-# https://realpython.com/pygame-a-primer/#images
-
-# playground
 import pygame
 from pygame.locals import *
 import random
@@ -42,8 +38,7 @@ STARS_HEIGHT = 2
 STARS_SPEED = 2
 
 
-class Agent(pygame.sprite.Sprite):
-    """docstring for Agent."""
+class Agent(pygame.sprite.Sprite):    
 
     def __init__(self, w=AGENT_WIDTH, h=AGENT_HEIGHT, col=(255, 255, 255)):
         super(Agent, self).__init__()
@@ -79,8 +74,7 @@ class Agent(pygame.sprite.Sprite):
         self.rect.y = AGENT_STARTY
 
 
-class Obstacle(pygame.sprite.Sprite):
-    """docstring for Obstacle."""
+class Obstacle(pygame.sprite.Sprite):    
 
     def __init__(self):
         super(Obstacle, self).__init__()
@@ -103,8 +97,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.y = 0-OBSTACLE_HEIGHT
 
 
-class Star(pygame.sprite.Sprite):
-    """docstring for Star."""
+class Star(pygame.sprite.Sprite):    
 
     def __init__(self):
         super(Star, self).__init__()
