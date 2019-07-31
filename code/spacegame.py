@@ -48,7 +48,8 @@ class Agent(pygame.sprite.Sprite):
     def __init__(self, w=AGENT_WIDTH, h=AGENT_HEIGHT, col=(255, 255, 255)):
         super(Agent, self).__init__()
         self.image = pygame.image.load(IMG_AGENT).convert()
-        self.image = pygame.transform.scale(self.image, (AGENT_WIDTH, AGENT_HEIGHT))
+        self.image = pygame.transform.scale(self.image,
+                                (AGENT_WIDTH, AGENT_HEIGHT))
         self.rect = self.image.get_rect()
         self.rect.x = AGENT_STARTX
         self.rect.y = AGENT_STARTY
@@ -84,7 +85,8 @@ class Obstacle(pygame.sprite.Sprite):
     def __init__(self):
         super(Obstacle, self).__init__()
         self.image = pygame.image.load(IMG_OBSTACLE).convert()
-        self.image = pygame.transform.scale(self.image, (OBSTACLE_WIDTH, OBSTACLE_HEIGHT))
+        self.image = pygame.transform.scale(self.image,
+                            (OBSTACLE_WIDTH, OBSTACLE_HEIGHT))
         self.rect = self.image.get_rect()
         self.rect.x = random.randrange(0, WINDOW_WIDTH-OBSTACLE_WIDTH)
         self.rect.y = 0-OBSTACLE_HEIGHT
@@ -109,7 +111,7 @@ class Star(pygame.sprite.Sprite):
         self.surf = pygame.Surface((STARS_WIDTH, STARS_HEIGHT))
         self.surf.fill((COL_YELLOW))
         self.rect = self.surf.get_rect(center=(random.randint(0, WINDOW_WIDTH),
-                        random.randint(0, WINDOW_HEIGHT)))
+                                            random.randint(0, WINDOW_HEIGHT)))
         self.speed = STARS_SPEED
 
     def update(self):
@@ -127,10 +129,10 @@ class Game(object):
     """instantiates a new game"""
 
     def __init__(self, w=WINDOW_WIDTH, h=WINDOW_HEIGHT):
-        self.score = 0
+        self.score = -1
         self.is_game_over = False
         self.display = pygame.display.set_mode((w, h))
-        pygame.display.set_caption('asteroids 1.2')
+        pygame.display.set_caption('asteroids game')
         self.display.fill(COL_BLACK)
         self.waitSecs = 2
         self.agent = Agent()
@@ -150,6 +152,14 @@ class Game(object):
     def update_state(self):
         # overwrite prev disp content
         self.display.fill(COL_BLACK)
+
+        # check score, if increased, update speed
+        if self.obstacle.rect.bottom == 0:
+            self.score += 1
+            self.obstacle.speed += .5
+            for star in self.stars:
+                star.speed += .5
+
         # move agent
         keys = pygame.key.get_pressed()
         self.agent.update(keys)
@@ -158,6 +168,7 @@ class Game(object):
             star.update()
         # move obstacles
         self.obstacle.update()
+
 
     def check_state(self):
         # check for collisions etc (i.e. game over state)
@@ -168,7 +179,12 @@ class Game(object):
             self.display.blit(entity.surf, entity.rect)
         self.display.blit(self.agent.image, self.agent.rect)
         self.display.blit(self.obstacle.image, self.obstacle.rect)
+        self.disp_score()
         pygame.display.update()
+
+    def disp_score(self):
+        score_txt = 'avoided asteroids: ' + str(self.score)
+        self.render_text(score_txt,18, 0.8*WINDOW_WIDTH, 0.1*WINDOW_HEIGHT)
 
     def disp_game_over(self):
         # print message
@@ -176,11 +192,11 @@ class Game(object):
         # wait for three seconds
         time.sleep(self.waitSecs)
 
-    def render_text(self,messageText):
-        textFont = pygame.font.Font('freesansbold.ttf', 28)
+    def render_text(self, messageText, font_size=28, x=WINDOW_WIDTH/2, y=WINDOW_HEIGHT/2):
+        textFont = pygame.font.Font('freesansbold.ttf', font_size)
         textSurface = textFont.render(messageText, True, COL_WHITE)
         textRect = textSurface.get_rect()
-        textRect.center = ((WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
+        textRect.center = ((x, y))
 
         self.display.blit(textSurface, textRect)
         pygame.display.update()
@@ -189,6 +205,10 @@ class Game(object):
         # resets game state
         self.agent.reset_pos()
         self.obstacle.reset_pos()
+        self.obstacle.speed = OBSTACLE_SPEED
+        for star in self.stars:
+            star.speed = STARS_SPEED
+        self.score = -1
 
     def run(self):
         # process events
@@ -222,6 +242,7 @@ def main():
         clock.tick(60)
     pygame.quit()
     quit()
+
 
 if __name__ == "__main__":
     main()
